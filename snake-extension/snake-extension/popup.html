@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 420px;
+      background: #2d4a28;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    #sg-wrap {
+      width: 420px;
+      border-radius: 0;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    #sg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #4a7c3f;
+      padding: 8px 14px;
+    }
+
+    #sg-score-area { display: flex; align-items: center; gap: 18px; }
+
+    .sg-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .sg-stat-icon { font-size: 19px; }
+
+    #sg-controls-row { display: flex; gap: 2px; }
+
+    #sg-controls-row button {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 17px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    #sg-controls-row button:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── Mode Bar ── */
+    #sg-mode-bar {
+      display: flex;
+      gap: 5px;
+      background: #3d6e34;
+      padding: 6px 9px;
+      flex-wrap: wrap;
+    }
+
+    .sg-mode-btn {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: none;
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sg-mode-btn:hover  { background: rgba(255,255,255,0.28); }
+    .sg-mode-btn.active { background: #fff; color: #3a6230; font-weight: 600; }
+
+    /* ── Canvas ── */
+    #sg-canvas-wrap {
+      border-left: 3px solid #4a7c3f;
+      border-right: 3px solid #4a7c3f;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas { display: block; }
+
+    #sg-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.60);
+    }
+
+    #sg-overlay h2 {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    #sg-overlay p {
+      color: rgba(255,255,255,0.88);
+      font-size: 13px;
+      margin: 0 0 18px;
+      text-align: center;
+      max-width: 240px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    #sg-overlay button {
+      background: #fff;
+      color: #333;
+      border: none;
+      padding: 9px 30px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    #sg-overlay button:hover { background: #eee; transform: scale(1.03); }
+
+    /* ── Bottom ── */
+    #sg-bottom {
+      background: #4a7c3f;
+      padding: 8px 10px 12px;
+    }
+
+    #sg-opts {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    #sg-opts label {
+      color: #fff;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #sg-opts select {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: none;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+    }
+
+    #sg-dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 38px);
+      grid-template-rows: repeat(3, 38px);
+      gap: 4px;
+      margin: 8px auto 0;
+      width: fit-content;
+    }
+
+    .sg-db {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      font-size: 15px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.1s;
+    }
+
+    .sg-db:hover  { background: rgba(255,255,255,0.32); }
+    .sg-db:active { background: rgba(255,255,255,0.5); transform: scale(0.95); }
+    .sg-de { width: 38px; height: 38px; }
+
+    #sg-mode-desc {
+      color: rgba(255,255,255,0.7);
+      font-size: 10px;
+      text-align: center;
+      margin-top: 6px;
+      min-height: 14px;
+    }
+
+    @keyframes scoreFlash {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.4); color: #ffdd44; }
+      100% { transform: scale(1); }
+    }
+    .flash { animation: scoreFlash 0.3s ease; }
+  </style>
+</head>
+<body>
+<div id="sg-wrap">
+
+  <!-- Header -->
+  <div id="sg-header">
+    <div id="sg-score-area">
+      <div class="sg-stat"><span class="sg-stat-icon">🍎</span><span id="sg-score">0</span></div>
+      <div class="sg-stat"><span class="sg-stat-icon">🏆</span><span id="sg-best">0</span></div>
+    </div>
+    <div id="sg-controls-row">
+      <button id="sg-sound-btn" title="Toggle sound">🔊</button>
+      <button id="sg-pause-btn" title="Pause">⏸</button>
+      <button id="sg-restart-btn" title="Restart">↺</button>
+    </div>
+  </div>
+
+  <!-- Mode Bar -->
+  <div id="sg-mode-bar">
+    <button class="sg-mode-btn active" data-mode="classic">Classic</button>
+    <button class="sg-mode-btn" data-mode="borderless">Borderless</button>
+    <button class="sg-mode-btn" data-mode="wall">Wall</button>
+    <button class="sg-mode-btn" data-mode="dark">Dark</button>
+    <button class="sg-mode-btn" data-mode="speedy">Speedy</button>
+    <button class="sg-mode-btn" data-mode="maze">Maze</button>
+  </div>
+
+  <!-- Canvas -->
+  <div id="sg-canvas-wrap">
+    <canvas id="sg-canvas"></canvas>
+    <div id="sg-overlay">
+      <h2 id="ov-title">Snake</h2>
+      <p id="ov-msg">Arrow Keys or WASD to move.<br>Eat apples to grow!</p>
+      <button id="sg-start-btn">▶ Play</button>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div id="sg-bottom">
+    <div id="sg-opts">
+      <label>Speed:
+        <select id="sg-speed">
+          <option value="200">Slow</option>
+          <option value="130" selected>Normal</option>
+          <option value="80">Fast</option>
+          <option value="50">Blazing</option>
+        </select>
+      </label>
+      <label>Apples:
+        <select id="sg-apples">
+          <option value="1" selected>1</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="sg-dpad">
+      <div class="sg-de"></div>
+      <button class="sg-db" id="btn-up">▲</button>
+      <div class="sg-de"></div>
+      <button class="sg-db" id="btn-left">◀</button>
+      <div class="sg-de"></div>
+      <button class="sg-db" id="btn-right">▶</button>
+      <div class="sg-de"></div>
+      <button class="sg-db" id="btn-down">▼</button>
+      <div class="sg-de"></div>
+    </div>
+
+    <div id="sg-mode-desc">Classic: avoid walls and your own tail.</div>
+  </div>
+
+</div>
+<script src="game.js"></script>
+</body>
+</html>
